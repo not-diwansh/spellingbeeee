@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spelling Contest 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#eee;font-family:'Segoe UI',Arial,sans-serif;min-height:100vh;overflow:hidden}
+#root{height:100vh;width:100vw}
+
+.start{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px;position:relative}
+.start-bg{position:absolute;inset:0;overflow:hidden}
+.start-bg video{width:100%;height:100%;object-fit:cover}
+.start-bg .overlay{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.start-content{position:relative;z-index:1;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.06);border-radius:20px;padding:48px 56px 32px;max-width:520px}
+.start h1{font-size:clamp(2rem,6vw,4rem);font-weight:800;color:#f0c040;margin-bottom:6px}
+.start p{color:rgba(255,255,255,.6);font-size:1rem;margin-bottom:28px}
+.start .go{padding:20px 60px;border:none;border-radius:12px;background:#f0c040;color:#000;font-weight:800;font-size:1.3rem;cursor:pointer;transition:.2s}
+.start .go:hover{transform:scale(1.04)}
+.music{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}
+.music .mlbl{font-size:.7rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.music .mbar{display:flex;align-items:center;gap:8px}
+.music .mbar .msong{flex:1;font-size:.82rem;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.music .mbar .msong.playing{color:#f0c040}
+.music .mbtn{width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;flex-shrink:0}
+.music .mbtn:hover{border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.9)}
+.music .mbtn.play{border-color:#f0c040;color:#f0c040;background:rgba(240,192,64,.1)}
+.upload-pptx{margin-top:12px;text-align:center}
+.upload-pptx label{font-size:.72rem;color:rgba(255,255,255,.3);cursor:pointer;transition:.2s;text-decoration:underline;text-underline-offset:3px}
+.upload-pptx label:hover{color:rgba(255,255,255,.6)}
+.upload-pptx input{display:none}
+
+.slide{height:100%;display:flex;align-items:center;justify-content:center;position:relative;background:#0a0a0a}
+.slide img{width:100%;height:100%;object-fit:cover;transition:opacity .4s}
+.slide .empty{color:#444;font-size:1.1rem}
+.slide .ctr{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#888;padding:4px 16px;border-radius:10px;font-size:.8rem}
+.slide .nav{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 10px}
+.slide .nav button{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.06);color:#aaa;font-size:1.1rem;cursor:pointer;transition:.2s}
+.slide .nav button:hover{background:rgba(255,255,255,.12);color:#fff}
+.slide .fs-btn{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.06);color:#888;font-size:.85rem;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center}
+.slide .fs-btn:hover{background:rgba(255,255,255,.12);color:#fff}
+
+.fab{position:fixed;z-index:50;border:none;border-radius:50%;cursor:pointer;width:48px;height:48px;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);color:#f0c040;font-size:1.2rem;transition:.2s;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.4);border:1px solid rgba(240,192,64,.15)}
+.fab:hover{background:rgba(240,192,64,.25);color:#fff;border-color:rgba(240,192,64,.4);transform:scale(1.08)}
+.fab-lb{right:20px;bottom:20px}
+.fab-tm{right:74px;bottom:20px}
+.fab-ho{right:74px;bottom:72px}
+
+.ov{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:16px}
+.ov.on{display:flex}
+.pn{background:rgba(0,0,0,.15);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.04);border-radius:16px;width:100%;max-width:750px;max-height:88vh;overflow-y:auto;padding:32px 28px 28px;position:relative}
+.pn .close{position:absolute;top:12px;right:14px;background:none;border:none;color:rgba(255,255,255,.25);font-size:1.4rem;cursor:pointer;line-height:1;padding:4px;transition:.2s}
+.pn .close:hover{color:#f0c040}
+.pn .fs{position:absolute;top:12px;right:44px;background:none;border:none;color:rgba(255,255,255,.2);font-size:.85rem;cursor:pointer;line-height:1;padding:4px 6px;transition:.2s;font-family:inherit}
+.pn .fs:hover{color:#f0c040}
+.pn:fullscreen{background:rgba(0,0,0,.15);max-width:100%;max-height:100vh;width:100vw;height:100vh;border-radius:0;display:flex;flex-direction:column;justify-content:center;padding:48px}
+.pn:fullscreen .ptitle{font-size:1.6rem}
+.pn:fullscreen .tbl{font-size:1.2rem}
+.pn:fullscreen .tbl th{font-size:.9rem;padding:14px 16px}
+.pn:fullscreen .tbl td{padding:12px 16px}
+.pn:fullscreen .tbl input{width:60px;font-size:1.2rem;padding:6px 8px}
+.pn:fullscreen .tot{font-size:1.3rem}
+.pn:fullscreen .rk{width:36px;height:36px;font-size:.9rem}
+.pn:fullscreen .td{font-size:clamp(5rem,18vw,10rem)}
+.pn:fullscreen .tp button,.pn:fullscreen .tb button,.pn:fullscreen .tr button{font-size:1.1rem;padding:12px 28px}
+.pn:fullscreen .tr input{font-size:1.2rem;padding:12px}
+.pn:fullscreen .close{font-size:2rem;top:20px;right:24px}
+.pn:fullscreen .fs{font-size:1.3rem;top:22px;right:64px}
+.pn:-webkit-full-screen{background:rgba(0,0,0,.15);max-width:100%;max-height:100vh;width:100vw;height:100vh;border-radius:0;display:flex;flex-direction:column;justify-content:center;padding:48px}
+.pn:-webkit-full-screen .ptitle{font-size:1.6rem}
+.pn:-webkit-full-screen .tbl{font-size:1.2rem}
+.pn:-webkit-full-screen .tbl th{font-size:.9rem;padding:14px 16px}
+.pn:-webkit-full-screen .tbl td{padding:12px 16px}
+.pn:-webkit-full-screen .tbl input{width:60px;font-size:1.2rem;padding:6px 8px}
+.pn:-webkit-full-screen .tot{font-size:1.3rem}
+.pn:-webkit-full-screen .rk{width:36px;height:36px;font-size:.9rem}
+.pn:-webkit-full-screen .td{font-size:clamp(5rem,18vw,10rem)}
+.pn:-webkit-full-screen .tp button,.pn:-webkit-full-screen .tb button,.pn:-webkit-full-screen .tr button{font-size:1.1rem;padding:12px 28px}
+.pn:-webkit-full-screen .tr input{font-size:1.2rem;padding:12px}
+.pn:-webkit-full-screen .close{font-size:2rem;top:20px;right:24px}
+.pn:-webkit-full-screen .fs{font-size:1.3rem;top:22px;right:64px}
+.pn .ptitle{text-align:center;color:rgba(255,255,255,.7);font-size:.9rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.06)}
+
+.tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.tbl thead{position:sticky;top:0;z-index:1}
+.tbl th{text-align:left;padding:10px 8px;font-weight:700;color:rgba(255,255,255,.35);background:rgba(0,0,0,.2);border-bottom:1px solid rgba(255,255,255,.08);font-size:.6rem;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.tbl td{padding:8px 8px;border-bottom:1px solid rgba(255,255,255,.04)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr{transition:background .2s}
+.tbl tbody tr:hover td{background:rgba(240,192,64,.05)}
+.tbl input{width:36px;padding:4px 2px;text-align:center;border:1px solid rgba(255,255,255,.06);border-radius:4px;background:rgba(0,0,0,.3);color:#eee;font-family:inherit;font-weight:600;font-size:.82rem;transition:border .2s}
+.tbl input:focus{outline:none;border-color:#f0c040;background:rgba(0,0,0,.5)}
+.tbl input:hover{border-color:rgba(255,255,255,.15)}
+.rk{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.65rem}
+.rk.g{background:linear-gradient(135deg,#f0c040,#d4a830);color:#000}
+.rk.s{background:linear-gradient(135deg,#b0b0b0,#888);color:#000}
+.rk.b{background:linear-gradient(135deg,#d49050,#b87840);color:#fff}
+.rk.n{background:rgba(255,255,255,.05);color:rgba(255,255,255,.25)}
+.tot{font-weight:800;color:#f0c040;font-size:.9rem}
+.tn{font-weight:600;cursor:pointer;transition:color .2s}
+.tn:hover{color:#f0c040}
+.del{background:none;border:none;color:rgba(255,255,255,.15);cursor:pointer;font-size:.7rem;padding:2px}
+.del:hover{color:#dc2626}
+.em{color:rgba(255,255,255,.2);text-align:center;padding:24px;font-size:.8rem}
+.ar{display:flex;gap:6px;margin-bottom:16px}
+.ar input{flex:1;padding:8px 12px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(0,0,0,.4);color:#eee;font-family:inherit;font-size:.82rem}
+.ar input:focus{outline:none;border-color:#f0c040}
+.ar button{white-space:nowrap}
+
+.td{font-size:clamp(3.5rem,12vw,7rem);font-weight:800;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:4px;padding:8px 0 16px;color:#eee}
+.td.w{color:#f0c040}
+.td.d{color:#e44;animation:fl .5s infinite}
+@keyframes fl{0%,100%{opacity:1}50%{opacity:.15}}
+.tp{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px}
+.tb{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.btn{padding:8px 18px;border:none;border-radius:8px;font-family:inherit;font-weight:600;font-size:.8rem;cursor:pointer;transition:.15s}
+.btn:active{transform:scale(.96)}
+.bg{background:#f0c040;color:#000}.bg:hover{background:#f5d060}
+.by{background:rgba(255,255,255,.08);color:#999;border:1px solid rgba(255,255,255,.06)}.by:hover{background:rgba(255,255,255,.12);color:#eee}
+.br{background:#c0392b;color:#fff}.br:hover{background:#e74c3c}
+.bo{background:transparent;border:1px solid rgba(255,255,255,.1);color:#888}.bo:hover{border-color:#f0c040;color:#f0c040}
+.bs{padding:6px 14px;font-size:.75rem}
+.tr{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+.tr input{width:70px;padding:8px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(0,0,0,.4);color:#eee;font-family:inherit;font-size:.85rem;text-align:center}
+.tr input:focus{outline:none;border-color:#f0c040}
+.tr span{color:#555;font-size:.75rem}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var SLIDES = ['slide_1.png','slide_2.png','slide_3.png','slide_4.png','slide_5.png','slide_6.png','slide_7.png','slide_8.png','slide_9.png','slide_10.png'];
+
+var SONGS = [
+  {file:'song1.mp3',label:'C418 - Moog City'},
+  {file:'song2.mp3',label:'Arctic Monkeys - 505'},
+  {file:'song3.mp3',label:'Steve Lacy - Dark Red'},
+  {file:'song4.mp3',label:'The Neighbourhood - Softcore'}
+];
+var audioEl = null;
+var currentSong = -1;
+
+var ROUNDS = [
+  {id:'r1',label:'General round'},
+  {id:'r2',label:'Word meaning round'},
+  {id:'r3',label:'Jumbled'},
+  {id:'r4',label:'Rapid fire'},
+  {id:'r5',label:'Visual round'}
+];
+
+var TEAMS = [
+  {id:1,name:'Buzzing Brilliance',s:{r1:0,r2:0,r3:0,r4:0,r5:0}},
+  {id:2,name:'The Brainy Bees',s:{r1:0,r2:0,r3:0,r4:0,r5:0}},
+  {id:3,name:'The Queen Bees',s:{r1:0,r2:0,r3:0,r4:0,r5:0}},
+  {id:4,name:'Vocabulary Victors',s:{r1:0,r2:0,r3:0,r4:0,r5:0}},
+  {id:5,name:'The Hive Minds',s:{r1:0,r2:0,r3:0,r4:0,r5:0}},
+  {id:6,name:'Lexicon Legends',s:{r1:0,r2:0,r3:0,r4:0,r5:0}}
+];
+
+var root = document.getElementById('root');
+var started = false;
+var slideIdx = 0;
+var panelOpen = null;
+var tSec = 30, tRun = false, tPause = false, tInt = null;
+
+function save() {
+  try { localStorage.setItem('sb', JSON.stringify({teams:TEAMS,idx:slideIdx})); }catch(e){}
+}
+function load() {
+  try {
+    var r = localStorage.getItem('sb');
+    if (r) {
+      var d = JSON.parse(r);
+      if (d && d.teams) {
+        TEAMS = d.teams.map(function(t){
+          if (!t.s) { var s={}; for(var i=0;i<ROUNDS.length;i++) s[ROUNDS[i].id]=0; if(typeof t.score==='number') s.r1=t.score; return {id:t.id,name:t.name,s:s}; }
+          for(var i=0;i<ROUNDS.length;i++){if(t.s[ROUNDS[i].id]===undefined) t.s[ROUNDS[i].id]=0}
+          return t;
+        });
+      }
+      if (d.idx !== undefined) slideIdx = d.idx;
+    }
+  }catch(e){}
+}
+
+function render() {
+  root.innerHTML = '';
+  if (!started) { renderStart(); return; }
+  renderSlide();
+}
+
+function renderStart() {
+  var n = TEAMS.length;
+  var songName = currentSong >= 0 ? SONGS[currentSong].label : 'No track selected';
+  var playing = currentSong >= 0 && audioEl && !audioEl.paused;
+  root.innerHTML = '<div class="start">'
+    +'<div class="start-bg"><video autoplay muted loop playsinline id="bgVid"><source src="bg.mp4"></video><div class="overlay"></div></div>'
+    +'<div class="start-content">'
+    +'<h1>Spelling Contest 2026</h1><p>'+n+' teams &middot; '+SLIDES.length+' slides</p>'
+    +'<button class="go" id="goBtn">Start</button>'
+    +'<div style="display:flex;gap:8px;justify-content:center;margin-top:12px">'
+    +'<button class="btn bs bo" onclick="openPanel(\'lb\')" style="padding:10px 20px;font-size:.82rem">&#x2741; Leaderboard</button>'
+    +'<button class="btn bs bo" onclick="openPanel(\'timer\')" style="padding:10px 20px;font-size:.82rem">&#x23F1; Timer</button>'
+    +'</div>'
+    +'<div class="music"><div class="mlbl">Music</div>'
+    +'<div class="mbar">'
+    +'<button class="mbtn" onclick="prevSong()">&#9664;</button>'
+    +'<button class="mbtn play" id="playBtn" onclick="togglePlay()">'+(playing?'||':'>')+'</button>'
+    +'<button class="mbtn" onclick="nextSong()">&#9654;</button>'
+    +'<span class="msong'+(playing?' playing':'')+'" id="songLabel">'+songName+'</span>'
+    +'</div></div>'
+    +'</div></div>';
+  document.getElementById('goBtn').onclick = function(){
+    var v = document.getElementById('bgVid');
+    if (v) { v.pause(); v.src = ''; }
+    if (audioEl) { audioEl.pause(); audioEl.src = ''; audioEl = null; }
+    started=true; render(); showFABs();
+    // enter fullscreen
+    if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+    else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
+    else if (document.documentElement.msRequestFullscreen) document.documentElement.msRequestFullscreen();
+  };
+  var v = document.getElementById('bgVid');
+  if (v) { v.play().catch(function(){}); }
+}
+
+function togglePlay() {
+  if (!audioEl || currentSong < 0) { playSong(0); return; }
+  if (audioEl.paused) {
+    audioEl.play().catch(function(){});
+  } else {
+    audioEl.pause();
+  }
+  updateMusicUI();
+}
+
+function prevSong() {
+  var i = currentSong <= 0 ? SONGS.length - 1 : currentSong - 1;
+  playSong(i);
+}
+
+function nextSong() {
+  var i = currentSong >= SONGS.length - 1 ? 0 : currentSong + 1;
+  playSong(i);
+}
+
+function playSong(idx) {
+  if (!audioEl) { audioEl = new Audio(); }
+  audioEl.src = SONGS[idx].file;
+  audioEl.play().catch(function(){});
+  currentSong = idx;
+  audioEl.onended = function(){ nextSong(); };
+  updateMusicUI();
+}
+
+function updateMusicUI() {
+  var playBtn = document.getElementById('playBtn');
+  var label = document.getElementById('songLabel');
+  if (!playBtn || !label) return;
+  var playing = audioEl && !audioEl.paused;
+  playBtn.textContent = playing ? '||' : '>';
+  playBtn.className = 'mbtn' + (playing ? ' play' : '');
+  if (currentSong >= 0) {
+    label.textContent = SONGS[currentSong].label;
+    label.className = 'msong' + (playing ? ' playing' : '');
+  } else {
+    label.textContent = 'No track selected';
+    label.className = 'msong';
+  }
+}
+
+function handlePPTX(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      JSZip.loadAsync(e.target.result).then(function(zip) {
+        var mediaFiles = [];
+        zip.forEach(function(path, entry) {
+          if (path.indexOf('ppt/media/') === 0 && !entry.dir) {
+            mediaFiles.push({path:path, entry:entry});
+          }
+        });
+        if (!mediaFiles.length) { alert('No images found in this PPTX.'); return; }
+        mediaFiles.sort(function(a,b){ return a.path.localeCompare(b.path); });
+        SLIDES = [];
+        var loaded = 0;
+        mediaFiles.forEach(function(m, idx) {
+          m.entry.async('base64').then(function(data) {
+            var ext = m.path.split('.').pop();
+            var dataUrl = 'data:image/'+ext+';base64,'+data;
+            SLIDES.push(dataUrl);
+            loaded++;
+            if (loaded === mediaFiles.length) {
+              alert('Loaded '+SLIDES.length+' slides from PPTX!');
+              // re-render start to update slide count
+              if (!started) render();
+            }
+          });
+        });
+      }).catch(function(){ alert('Failed to read PPTX file. Make sure it is a valid .pptx.'); });
+    } catch(err) { alert('Error: '+err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function renderSlide() {
+  var total = SLIDES.length;
+  var d = document.createElement('div'); d.className = 'slide';
+  if (total) {
+    var img = document.createElement('img'); img.id='si';
+    img.style.opacity='0';
+    img.onload=function(){this.style.opacity='1'};
+    img.src = slideSrc(slideIdx);
+    d.appendChild(img);
+  } else {
+    d.innerHTML = '<div class="empty">No slides loaded.</div>';
+  }
+  if (total) {
+    var nav = document.createElement('div'); nav.className='nav';
+    var pb = document.createElement('button'); pb.textContent='<'; pb.onclick=function(){ch(-1);};
+    var nb = document.createElement('button'); nb.textContent='>'; nb.onclick=function(){ch(1);};
+    nav.appendChild(pb); nav.appendChild(nb); d.appendChild(nav);
+    var c = document.createElement('div'); c.className='ctr'; c.id='sc';
+    c.textContent=(slideIdx+1)+' / '+total; d.appendChild(c);
+    var fsb = document.createElement('button'); fsb.className='fs-btn'; fsb.innerHTML='&#x26F6;';
+    fsb.onclick=function(){ fsSlide(); }; d.appendChild(fsb);
+  }
+  root.appendChild(d);
+}
+
+function slideSrc(idx) {
+  var s = SLIDES[idx];
+  if (!s) return '';
+  if (s.indexOf('data:') === 0) return s;
+  return 'slides/' + s;
+}
+
+function ch(dir) {
+  var total = SLIDES.length;
+  if (!total) return;
+  slideIdx = Math.max(0, Math.min(total-1, slideIdx+dir));
+  var img = document.getElementById('si');
+  var ctr = document.getElementById('sc');
+  if (img) { img.style.opacity='0'; img.src=slideSrc(slideIdx); requestAnimationFrame(function(){img.style.opacity='1';}); }
+  if (ctr) ctr.textContent = (slideIdx+1)+' / '+total;
+  save();
+}
+
+function showFABs() {
+  if (!document.getElementById('fHO')) {
+    var ho = document.createElement('button'); ho.id='fHO'; ho.className='fab fab-ho'; ho.innerHTML='&#x2302;';
+    ho.onclick=function(){ goHome(); }; document.body.appendChild(ho);
+  }
+  if (!document.getElementById('fTM')) {
+    var tm = document.createElement('button'); tm.id='fTM'; tm.className='fab fab-tm'; tm.innerHTML='&#x23F1;';
+    tm.onclick=function(){openPanel('timer');}; document.body.appendChild(tm);
+  }
+  if (!document.getElementById('fLB')) {
+    var lb = document.createElement('button'); lb.id='fLB'; lb.className='fab fab-lb'; lb.innerHTML='&#x2741;';
+    lb.onclick=function(){openPanel('lb');}; document.body.appendChild(lb);
+  }
+}
+
+function goHome() {
+  if (audioEl) { audioEl.pause(); audioEl.src = ''; audioEl = null; }
+  currentSong = -1;
+  var v = document.getElementById('bgVid');
+  if (v) { v.pause(); v.src = ''; v = null; }
+  // remove FABs
+  ['fHO','fTM','fLB'].forEach(function(id){ var el=document.getElementById(id); if(el) el.remove(); });
+  started = false;
+  panelOpen = null;
+  if (tInt) { clearInterval(tInt); tInt = null; }
+  tRun = false; tPause = false;
+  render();
+}
+
+function openPanel(name) {
+  panelOpen = name;
+  var ov = document.getElementById('pv');
+  if (!ov) { ov = document.createElement('div'); ov.id='pv'; ov.className='ov'; ov.onclick=function(e){if(e.target===ov)closePanel();}; document.body.appendChild(ov); }
+  ov.classList.add('on');
+  ov.innerHTML = name==='timer' ? timerHTML() : lbHTML();
+}
+
+function fsPanel(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (document.fullscreenElement) { document.exitFullscreen(); return; }
+  if (el.requestFullscreen) el.requestFullscreen();
+  else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  else if (el.msRequestFullscreen) el.msRequestFullscreen();
+}
+
+function fsSlide() {
+  if (document.fullscreenElement) { document.exitFullscreen(); return; }
+  if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+  else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
+  else if (document.documentElement.msRequestFullscreen) document.documentElement.msRequestFullscreen();
+}
+
+function closePanel() {
+  var ov = document.getElementById('pv');
+  if (ov) ov.classList.remove('on');
+  panelOpen = null;
+}
+
+function lbHTML() {
+  var r = getRanked();
+  var h = '<div class="pn" id="lbPanel"><button class="close" onclick="closePanel()">x</button><button class="fs" onclick="fsPanel(\'lbPanel\')">&#x26F6;</button>'
+    +'<div class="ptitle">Leaderboard</div>'
+    +'<table class="tbl"><thead><tr><th style="text-align:center;width:24px"></th><th>Team</th>';
+  for(var i=0;i<ROUNDS.length;i++) h+='<th style="text-align:center">'+ROUNDS[i].label+'</th>';
+  h+='<th style="text-align:center;color:#f0c040">Total</th></tr></thead><tbody>';
+  if (r.length) { for(var i=0;i<r.length;i++) h+=lbRow(r[i],i); }
+  else h+='<tr><td colspan="7" class="em">No teams</td></tr>';
+  h+='</tbody></table></div>';
+  return h;
+}
+
+function lbRow(t,i) {
+  var rc=i===0?'g':i===1?'s':i===2?'b':'n';
+  var tot=getTotal(t.id);
+  var h='<tr><td style="text-align:center"><span class="rk '+rc+'">'+(i+1)+'</span></td>'
+    +'<td><span class="tn" onclick="lbRename('+t.id+')">'+esc(t.name)+'</span></td>';
+  for(var j=0;j<ROUNDS.length;j++) {
+    h+='<td style="text-align:center"><input type="number" value="'+(t.s[ROUNDS[j].id]||0)+'" step="0.5" onchange="lbScore('+t.id+',\''+ROUNDS[j].id+'\',this.value)"></td>';
+  }
+  h+='<td style="text-align:center"><span class="tot">'+tot+'</span></td></tr>';
+  return h;
+}
+
+function lbRefresh() {
+  var ov = document.getElementById('pv');
+  if (ov && ov.classList.contains('on') && panelOpen==='lb') ov.innerHTML = lbHTML();
+}
+
+function getTotal(id) {
+  var t = getTeam(id); if (!t || !t.s) return 0;
+  var sum=0; for(var i=0;i<ROUNDS.length;i++) sum+=t.s[ROUNDS[i].id]||0; return 100+sum;
+}
+
+function getTeam(id) {
+  for(var i=0;i<TEAMS.length;i++) if(TEAMS[i].id===id) return TEAMS[i];
+  return null;
+}
+
+function getRanked() {
+  var c=[]; for(var i=0;i<TEAMS.length;i++) c.push(TEAMS[i]);
+  c.sort(function(a,b){return getTotal(b.id)-getTotal(a.id);});
+  return c;
+}
+
+function lbAdd() {
+  var inp=document.getElementById('lbIn'); if(!inp) return;
+  var n=inp.value.trim(); if(!n) return;
+  var t={id:Date.now()+Math.random()*9999,name:n,s:{}};
+  for(var i=0;i<ROUNDS.length;i++) t.s[ROUNDS[i].id]=0;
+  TEAMS.push(t); inp.value=''; lbRefresh(); save();
+}
+
+function lbDel(id) {
+  if(!confirm('Remove?')) return;
+  var nt=[]; for(var i=0;i<TEAMS.length;i++) if(TEAMS[i].id!==id) nt.push(TEAMS[i]);
+  TEAMS=nt; lbRefresh(); save();
+}
+
+function lbRename(id) {
+  var t=getTeam(id); if(!t) return;
+  var n=prompt('Rename:',t.name); if(n&&n.trim()){t.name=n.trim();lbRefresh();save();}
+}
+
+function lbScore(id,round,val) {
+  var t=getTeam(id); if(!t) return;
+  var n = parseFloat(val);
+  t.s[round] = isNaN(n) ? 0 : n;
+  save();
+  var ov=document.getElementById('pv');
+  if(ov&&ov.classList.contains('on')&&panelOpen==='lb') ov.innerHTML=lbHTML();
+}
+
+function timerHTML() {
+  var m=Math.floor(tSec/60),s=tSec%60;
+  var disp=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  var cls='td';
+  if(tSec<=0||tSec<=5) cls+=' d'; else if(tSec<=10) cls+=' w';
+  return '<div class="pn" id="tmPanel" style="max-width:420px"><button class="close" onclick="closePanel()">x</button><button class="fs" onclick="fsPanel(\'tmPanel\')">&#x26F6;</button>'
+    +'<div class="ptitle">Timer</div>'
+    +'<div class="'+cls+'" id="td">'+disp+'</div>'
+    +'<div class="tp">'
+    +'<button class="btn bs bo" onclick="tSet(15)">15s</button>'
+    +'<button class="btn bs bo" onclick="tSet(30)">30s</button>'
+    +'<button class="btn bs bo" onclick="tSet(45)">45s</button>'
+    +'<button class="btn bs bo" onclick="tSet(60)">60s</button>'
+    +'<button class="btn bs bo" onclick="tSet(90)">90s</button></div>'
+    +'<div class="tr"><input type="number" id="tIn" value="'+tSec+'" min="1" max="600">'
+    +'<button class="btn bs bo" onclick="tSetC()">Set</button>'
+    +'<span>sec</span></div>'
+    +'<div class="tb">'
+    +'<button class="btn bg" id="tsb"'+(tRun?' disabled':'')+' onclick="tStart()">Start</button>'
+    +'<button class="btn by" id="tpb"'+(tRun&&!tPause?'':' disabled')+' onclick="tPauseF()">Pause</button>'
+    +'<button class="btn br" onclick="tReset()">Reset</button></div></div>';
+}
+
+function tRefresh() {
+  var el=document.getElementById('td'); if(!el) return;
+  var m=Math.floor(tSec/60),s=tSec%60;
+  el.textContent=(m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  el.className='td';
+  if(tSec<=0||tSec<=5) el.classList.add('d'); else if(tSec<=10) el.classList.add('w');
+  var sb=document.getElementById('tsb'),pb=document.getElementById('tpb');
+  if(sb) sb.disabled=tRun; if(pb) pb.disabled=!tRun||tPause;
+}
+
+function tSet(sec) {
+  if(tInt){clearInterval(tInt);tInt=null}
+  tSec=sec;tRun=false;tPause=false;
+  var inp=document.getElementById('tIn'); if(inp) inp.value=sec;
+  tRefresh();
+}
+
+function tSetC() {
+  var inp=document.getElementById('tIn'); if(!inp) return;
+  var v=parseInt(inp.value); if(v>0) tSet(v);
+}
+
+function tStart() {
+  if(tRun&&!tPause) return;
+  if(tSec<=0&&!tRun){var inp=document.getElementById('tIn');tSec=inp?parseInt(inp.value)||30:30;}
+  if(!tRun) {
+    tRun=true;tPause=false;
+    if(tInt) clearInterval(tInt);
+    tInt=setInterval(function(){
+      if(tPause) return;
+      tSec--;
+      if(tSec<=0){tSec=0;tRun=false;clearInterval(tInt);tInt=null;beep();}
+      tRefresh();
+    },1000);
+  } else if(tPause) {tPause=false;}
+  tRefresh();
+}
+
+function tPauseF() {
+  if(!tRun) return;
+  tPause=!tPause;
+  var pb=document.getElementById('tpb');
+  if(pb) pb.textContent=tPause?'Resume':'Pause';
+  tRefresh();
+}
+
+function tReset() {
+  if(tInt){clearInterval(tInt);tInt=null}
+  tRun=false;tPause=false;
+  var inp=document.getElementById('tIn');
+  tSec=inp?parseInt(inp.value)||30:30;
+  tRefresh();var pb=document.getElementById('tpb');
+  if(pb) pb.textContent='Pause';
+}
+
+function beep() {
+  try{
+    var ctx=new(window.AudioContext||window.webkitAudioContext)();
+    for(var i=0;i<2;i++){
+      var o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=i===0?880:660;o.type='sine';
+      g.gain.setValueAtTime(0.4,ctx.currentTime+i*0.2);
+      g.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+i*0.2+0.4);
+      o.start(ctx.currentTime+i*0.2);o.stop(ctx.currentTime+i*0.2+0.4);
+    }
+  }catch(e){}
+}
+
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='INPUT') return;
+  if(!started) return;
+  if(e.key==='ArrowRight'){e.preventDefault();ch(1);}
+  if(e.key==='ArrowLeft'){e.preventDefault();ch(-1);}
+  if(e.key===' '){e.preventDefault();if(tRun&&tPause){tPause=false;tRefresh();var pb=document.getElementById('tpb');if(pb)pb.textContent='Pause';}else if(tRun){tPause=true;tRefresh();var pb=document.getElementById('tpb');if(pb)pb.textContent='Resume';}else tStart();}
+  if(e.key==='Escape') closePanel();
+});
+
+function esc(t){var e=document.createElement('div');e.textContent=t;return e.innerHTML;}
+
+load();
+render();
+</script>
+</body>
+</html>
